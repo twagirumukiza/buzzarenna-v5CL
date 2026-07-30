@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>BuzzArena — Quiz multijoueur</title>
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="brand"><span class="brand-dot"></span><span>BuzzArena</span></div>
+        <div id="hostControls" class="host-controls hidden">
+          <button id="endGameBtn" class="icon-btn danger" title="Terminer la partie">🛑</button>
+          <button id="backToLobbyBtn" class="icon-btn" title="Retour au lobby">🔄</button>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button id="presenterToggle" class="icon-btn" aria-label="Réglages du présentateur TV">🎬</button>
+        <button id="soundToggle" class="icon-btn" aria-label="Activer ou désactiver le son">🔊</button>
+      </div>
+    </header>
+    <div id="presenterBanner" class="presenter-banner hidden"><span class="presenter-mic">🎙️</span><p id="presenterText"></p></div>
+
+    <main>
+      <section id="homeView" class="view active">
+        <div class="hero-card">
+          <div class="hero-copy">
+            <span class="eyebrow">QUIZ MULTIJOUEUR EN LIGNE</span>
+            <h1>Le jeu où la bonne réponse ne suffit pas.<br><span>Il faut aussi être le plus rapide.</span></h1>
+            <p>Créez un salon, partagez le lien et affrontez vos amis avec quatre bipeurs colorés.</p>
+          </div>
+          <div class="buzzer-preview" aria-hidden="true">
+            <div class="mini-buzzer blue"></div><div class="mini-buzzer pink"></div>
+            <div class="mini-buzzer orange"></div><div class="mini-buzzer green"></div>
+          </div>
+        </div>
+
+        <div class="action-grid">
+          <article class="panel">
+            <h2>Créer un salon</h2>
+            <label>Pseudo<input id="createName" maxlength="18" placeholder="Votre pseudo" /></label>
+            <label>Thèmes (sélection multiple)
+              <div class="theme-checks">
+                <label class="check-chip"><input type="checkbox" class="topicCheck" value="general" checked> Culture générale</label>
+                <label class="check-chip"><input type="checkbox" class="topicCheck" value="contemporary"> Culture contemporaine</label>
+                <label class="check-chip"><input type="checkbox" class="topicCheck" value="history"> Histoire</label>
+                <label class="check-chip"><input type="checkbox" class="topicCheck" value="cinema"> 7ᵉ Art (Films &amp; Séries cultes)</label>
+                <label class="check-chip"><input type="checkbox" class="topicCheck" value="sport"> Sport</label>
+                <label class="check-chip"><input type="checkbox" class="topicCheck" value="animals"> Animaux</label>
+                <label class="check-chip"><input type="checkbox" class="topicCheck" value="capitals"> Capitales des pays</label>
+                <label class="check-chip"><input type="checkbox" class="topicCheck" value="flags"> Drapeaux des pays</label>
+                <label class="check-chip"><input type="checkbox" class="topicCheck" value="literature"> Littérature</label>
+                <label class="check-chip"><input type="checkbox" class="topicCheck" value="dance"> Danse</label>
+                <label class="check-chip"><input type="checkbox" class="topicCheck" value="theatre"> Théâtre</label>
+                <label class="check-chip"><input type="checkbox" class="topicCheck" value="judo"> Judo &amp; Jiu-jitsu</label>
+              </div>
+              <p class="hint">Cochez plusieurs thèmes : l'IA compose un quiz en les mélangeant.</p>
+            </label>
+            <label>Temps par question
+              <div class="range-row"><input id="timerRange" type="range" min="10" max="120" step="5" value="30"><strong id="timerValue">30 s</strong></div>
+            </label>
+            <label>Nombre de questions (Manche 1)
+              <div class="range-row"><input id="questionCountRange" type="range" min="5" max="20" step="1" value="10"><strong id="questionCountValue">10</strong></div>
+              <p class="hint">La Finale garde 6 questions, quel que soit ce réglage.</p>
+            </label>
+            <button id="createRoomBtn" class="primary-btn">Créer le salon</button>
+          </article>
+
+          <article class="panel">
+            <h2>Rejoindre un salon</h2>
+            <label>Pseudo<input id="joinName" maxlength="18" placeholder="Votre pseudo" /></label>
+            <label>Code du salon<input id="roomCodeInput" maxlength="6" placeholder="ABC123" autocapitalize="characters" /></label>
+            <button id="joinRoomBtn" class="secondary-btn">Rejoindre</button>
+            <p class="hint">Un lien partagé remplit automatiquement le code.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="lobbyView" class="view">
+        <div class="lobby-layout">
+          <article class="panel room-panel">
+            <span class="eyebrow">SALON</span>
+            <div class="room-code-row"><h2 id="roomCodeLabel">------</h2><button id="copyLinkBtn" class="small-btn">Copier le lien</button></div>
+            <p id="roomMeta" class="muted"></p>
+            <div id="playersList" class="players-list"></div>
+            <button id="startGameBtn" class="primary-btn hidden">Lancer la partie</button>
+            <p id="waitingText" class="hint">En attente du lancement par le créateur…</p>
+          </article>
+          <article class="panel rules-panel">
+            <h3>Format</h3>
+            <p><strong>Manche 1 :</strong> nombre de questions réglable par l'hôte (5 à 20). Trois questions valent double et une vaut triple.</p>
+            <p><strong>Finale :</strong> les deux meilleurs s’affrontent sur 6 questions au même barème.</p>
+            <p><strong>Égalité :</strong> une question décisive désigne le champion.</p>
+            <p><strong>Score :</strong> remis à zéro à chaque manche — seule la manche en cours compte.</p>
+            <p><strong>Questions :</strong> jamais répétées d’une manche à l’autre.</p>
+            <p><strong>Reconnexion :</strong> un rafraîchissement de page ne quitte pas la partie, vous reprenez là où vous en étiez.</p>
+            <p><strong>🎙️ Présentateur TV :</strong> une IA anime la partie en direct — annonces, suspense, confettis et feux d'artifice pour le champion. Réglages (mode TV/sobre/désactivé, voix) via l'icône 🎬.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="gameView" class="view">
+        <div class="game-head">
+          <div><span id="roundLabel" class="eyebrow">MANCHE 1</span><h2 id="questionCounter">Question 1 / 10</h2></div>
+          <div class="score-pill">Score <strong id="myScore">0</strong></div>
+        </div>
+        <div id="multiplierBanner" class="multiplier-banner">Barème normal</div>
+        <article class="question-card">
+          <div class="timer-wrap"><div id="timerRing" class="timer-ring"><span id="timerText">30</span></div></div>
+          <h1 id="questionText">Chargement de la question…</h1>
+          <div id="answersText" class="answers-text"></div>
+        </article>
+        <div id="buzzers" class="buzzers-grid">
+          <button class="buzzer-btn blue" data-choice="0"><span>A</span></button>
+          <button class="buzzer-btn pink" data-choice="1"><span>B</span></button>
+          <button class="buzzer-btn orange" data-choice="2"><span>C</span></button>
+          <button class="buzzer-btn green" data-choice="3"><span>D</span></button>
+        </div>
+        <p id="answerStatus" class="answer-status">Choisissez une réponse.</p>
+      </section>
+
+      <section id="resultsView" class="view">
+        <article class="panel results-panel">
+          <span class="eyebrow">CORRECTION</span>
+          <h2 id="correctAnswerLabel"></h2>
+          <div id="questionRanking" class="ranking-list"></div>
+          <div class="progress-track"><div id="nextProgress" class="progress-fill"></div></div>
+        </article>
+      </section>
+
+      <section id="championView" class="view">
+        <div class="champion-hero">
+          <div class="trophy-big" id="championTrophy">🏆</div>
+          <span class="eyebrow" id="championEyebrow">👑 CHAMPION DE BUZZARENA</span>
+          <h1 id="championName">—</h1>
+          <p id="championStatsLine" class="muted"></p>
+        </div>
+        <article class="panel final-ranking-panel">
+          <h3>Classement final</h3>
+          <div id="finalRankingList" class="ranking-list"></div>
+        </article>
+        <div class="champion-actions">
+          <button id="statsBtn" class="secondary-btn">📊 Statistiques de la partie</button>
+          <button id="newGameBtn" class="primary-btn hidden">🔁 Nouvelle partie</button>
+          <p id="waitingNewGame" class="hint hidden">En attente d'une nouvelle partie lancée par l'hôte…</p>
+          <button id="quitGameBtn" class="secondary-btn">🚪 Quitter</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">BuzzArena v4 — Présentateur TV IA · thèmes multiples · by twagirumukiza</footer>
+  </div>
+
+  <div id="stageOverlay"></div>
+
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card" id="modalCard">
+      <div id="modalIcon" class="modal-icon">🏆</div>
+      <h2 id="modalTitle">Champion</h2>
+      <p id="modalText"></p>
+      <button id="modalBtn" class="primary-btn">Continuer</button>
+    </div>
+  </div>
+
+  <div id="presenterSettingsModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card settings-card">
+      <h2>🎙️ Présentateur TV</h2>
+      <p class="hint">Réglages propres à cet appareil.</p>
+      <p class="settings-label">Ambiance</p>
+      <div class="segmented" id="modeSegmented">
+        <button type="button" class="seg-btn" data-mode="tv">🎬 Mode TV</button>
+        <button type="button" class="seg-btn" data-mode="sober">🎧 Sobre</button>
+        <button type="button" class="seg-btn" data-mode="off">🔇 Désactivé</button>
+      </div>
+      <p class="settings-label">Voix</p>
+      <div class="segmented" id="voiceSegmented">
+        <button type="button" class="seg-btn" data-voice="female">🎤 Féminine</button>
+        <button type="button" class="seg-btn" data-voice="male">🎤 Masculine</button>
+      </div>
+      <button id="presenterSettingsClose" class="primary-btn">OK</button>
+    </div>
+  </div>
+
+  <div id="statsModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card stats-card">
+      <h2>📊 Statistiques de la partie</h2>
+      <p class="hint">Classement complet et performance de chaque joueur.</p>
+      <div class="stats-table-wrap">
+        <div class="stats-table-header">
+          <span>Joueur</span><span>Score</span><span>Bonnes réponses</span><span>Précision</span><span>Temps moyen</span><span>Meilleure série</span>
+        </div>
+        <div id="statsTableBody"></div>
+      </div>
+      <button id="statsClose" class="primary-btn">Fermer</button>
+    </div>
+  </div>
+
+  <canvas id="confettiCanvas" class="confetti-canvas hidden"></canvas>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <audio id="audioBuzz" src="assets/sounds/floraphonic-cute-level-up-1-189852.mp3" preload="auto"></audio>
+  <audio id="audioTick" src="assets/sounds/freesound_community-clock-timer-reverb-58822.mp3" preload="auto" loop></audio>
+  <audio id="audioAmbient" src="assets/sounds/maksymmalko-game-minecraft-gaming-background-music-402451.mp3" preload="auto" loop></audio>
+  <audio id="audioTimeEnd" src="assets/sounds/mori_sound-fx-done-trumpet-510841.mp3" preload="auto"></audio>
+  <audio id="audioVictory" src="assets/sounds/peekaboolabcreative-11l-victory_sound_with_t-1749487402950-357606.mp3" preload="auto"></audio>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="questions.js"></script>
+  <script src="presenter.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
